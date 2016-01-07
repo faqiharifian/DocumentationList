@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+android:orientation="vertical"
+android:layout_width="match_parent"
+android:layout_height="wrap_content"
+android:showDividers="beginning|end"
+android:background="@drawable/outline"
+android:layout_margin="10dp">
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Name:"
+    android:id="@+id/tv1" />
+
+<EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+android:text="Document Name"
+    android:hint="Document Name"
+    android:textSize="12sp"
+    android:id="@+id/document_name"
+    android:layout_below="@+id/tv1"
+    android:layout_toLeftOf="@+id/delete" />
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Date of Receipt"
+    android:id="@+id/tv2"
+    android:layout_below="@+id/document_name" />
+
+<EditText
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:inputType="date"
+    android:ems="10"
+android:text="dd/mm/yyyy"
+    android:hint="dd/mm/yyyy"
+    android:textSize="12sp"
+    android:id="@+id/document_date"
+    android:layout_below="@+id/tv2" />
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Author:"
+    android:id="@+id/tv3"
+    android:layout_below="@+id/document_date" />
+
+<EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+android:text="Document Author"
+    android:hint="Document Author"
+    android:textSize="12sp"
+    android:id="@+id/document_author"
+    android:layout_below="@+id/tv3" />
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Custodian:"
+    android:id="@+id/tv4"
+    android:layout_below="@+id/document_author" />
+
+<EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+android:text="Document Custodian"
+    android:hint="Document Custodian"
+    android:textSize="12sp"
+    android:id="@+id/document_custodian"
+    android:layout_below="@+id/tv4" />
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="On-Site Location"
+    android:id="@+id/tv5"
+    android:layout_below="@+id/document_custodian" />
+
+<EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+android:text="Document On-Site Location"
+    android:hint="Document On-Site Location"
+    android:textSize="12sp"
+    android:id="@+id/document_on_site"
+    android:layout_below="@+id/tv5" />
+
+<TextView
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:text="Off-Site Location"
+    android:id="@+id/tv6"
+    android:layout_below="@+id/document_on_site" />
+
+<EditText
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+android:text="Document Off-Site Location"
+    android:hint="Document Off-Site Location"
+    android:textSize="12sp"
+    android:id="@+id/document_off_site"
+    android:layout_below="@+id/tv6" />
+
+    <ImageButton
+        android:layout_width="wrap_content"
+        android:layout_height="30dp"
+        android:id="@+id/delete"
+        android:layout_centerHorizontal="true"
+        android:adjustViewBounds="true"
+        android:maxHeight="30dp"
+        android:src="@drawable/delete"
+        android:background="@android:color/transparent"
+        android:scaleType="fitCenter"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:maxWidth="30dp" />
+</RelativeLayout>

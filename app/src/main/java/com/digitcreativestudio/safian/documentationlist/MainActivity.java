@@ -1,17 +1,18 @@
 package com.digitcreativestudio.safian.documentationlist;
 
-import android.content.Context;
+import android.animation.Animator;
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
-import android.view.MotionEvent;
 import android.view.View;
-import android.widget.Button;
+import android.view.ViewGroup;
 import android.widget.EditText;
+import android.widget.ImageButton;
 import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 import android.widget.ViewFlipper;
 
 import java.util.ArrayList;
@@ -21,72 +22,143 @@ public class MainActivity extends AppCompatActivity {
     float x1, x2, y1, y2;
     int currentPage = 0;
     ViewFlipper vf;
-    LinearLayout manuals, plans, agreements, documents, procedures, guidelines;
-    Button addManual, addPlan, addAgreement, addDocument, addProcedure, addGuideline;
     LinearLayout manualFields, planFields, agreementFields, documentFields, procedureFields, guidelineFields;
-    LayoutInflater inflater;
+
+    ImageButton prev, add, next, generate;
+
+    TemporaryStorage preferences;
+    public static boolean pdfGenerated = false;
 
     @Override
-    public boolean onTouchEvent(MotionEvent touchevent) {
-//        return super.onTouchEvent(touchevent);
-        switch(touchevent.getAction()){
-            case MotionEvent.ACTION_DOWN:
-            {
-                x1 = touchevent.getX();
-                y1 = touchevent.getY();
-                break;
-            }
-            case MotionEvent.ACTION_UP:
-            {
-                x2 = touchevent.getX();
-                y2 = touchevent.getY();
-
-                //if left to right sweep event on screen
-                if (x1 - x2 < -100)
-                {
-                    if(vf.getDisplayedChild()>0){
-                        vf.setInAnimation(this, R.anim.in_from_left);
-                        vf.setOutAnimation(this, R.anim.out_to_right);
-                        vf.showPrevious();
-                    }
-                }
-
-                // if right to left sweep event on screen
-                if (x1 - x2 > 100)
-                {
-                    if(vf.getDisplayedChild() < vf.getChildCount()-1){
-                        vf.setInAnimation(this, R.anim.in_from_right);
-                        vf.setOutAnimation(this, R.anim.out_to_left);
-                        vf.showNext();
-
-                    }
-                }
-/*
-                // if UP to Down sweep event on screen
-                if (y1 < y2)
-                {
-                    Toast.makeText(this, "UP to Down Swap Performed", Toast.LENGTH_LONG).show();
-                }
-
-                //if Down to UP sweep event on screen
-                if (y1 > y2)
-                {
-                    Toast.makeText(this, "Down to UP Swap Performed", Toast.LENGTH_LONG).show();
-                }*/
-                break;
-            }
-        }
-        return false;
+    protected void onStop() {
+        super.onStop();
+        preferences.clearAll();
+        preferences.saveData(
+                new String[]{
+                        ((EditText) findViewById(R.id.name_of_office)).getText().toString(),
+                        ((EditText) findViewById(R.id.address)).getText().toString(),
+                        ((EditText) findViewById(R.id.phone_or_email)).getText().toString(),
+                        ((EditText) findViewById(R.id.last_update)).getText().toString(),
+                        ((EditText) findViewById(R.id.verification)).getText().toString(),
+                        ((EditText) findViewById(R.id.sent_to_head_office)).getText().toString(),
+                        ((EditText) findViewById(R.id.sent_to_branch)).getText().toString(),
+                        ((EditText) findViewById(R.id.sent_to_offsite)).getText().toString()
+                },
+                getInput()
+        );
+        preferences.isset(true);
     }
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main2);
-        ((Button) findViewById(R.id.generate)).setOnClickListener(new View.OnClickListener() {
+
+        preferences = new TemporaryStorage(getApplicationContext());
+
+        manualFields = (LinearLayout) findViewById(R.id.manual_fields);
+        planFields = (LinearLayout) findViewById(R.id.plan_fields);
+        agreementFields = (LinearLayout) findViewById(R.id.agreement_fields);
+        documentFields = (LinearLayout) findViewById(R.id.document_fields);
+        procedureFields = (LinearLayout) findViewById(R.id.procedure_fields);
+        guidelineFields = (LinearLayout) findViewById(R.id.guideline_fields);
+
+        vf = (ViewFlipper) findViewById(R.id.viewFlipper);
+
+        prev = (ImageButton) findViewById(R.id.prev);
+        add = (ImageButton) findViewById(R.id.add);
+        next = (ImageButton) findViewById(R.id.next);
+        generate = (ImageButton) findViewById(R.id.generate);
+
+        prev.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Log.e("clicked", "clicked");
+                if(vf.getDisplayedChild() > 0) {
+                    vf.setInAnimation(MainActivity.this, R.anim.in_from_left);
+                    vf.setOutAnimation(MainActivity.this, R.anim.out_to_right);
+                    vf.showPrevious();
+                    generate.animate().setDuration(500).alpha(0).setListener(new Animation(generate));
+                    next.animate().setDuration(500).alpha(1).setListener(new Animation(next));
+                }
+                if(vf.getDisplayedChild() == 0){
+                    prev.animate().setDuration(500).alpha(0).setListener(new Animation(prev));
+                    add.animate().setDuration(500).alpha(0).setListener(new Animation(add));
+                }
+                if(vf.getDisplayedChild() > 0 && vf.getDisplayedChild() < vf.getChildCount()-1){
+                    add.animate().setDuration(500).alpha(1).setListener(new Animation(add));
+                }
+            }
+        });
+
+        next.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                if(vf.getDisplayedChild() < vf.getChildCount()) {
+                    vf.setInAnimation(MainActivity.this, R.anim.in_from_right);
+                    vf.setOutAnimation(MainActivity.this, R.anim.out_to_left);
+                    vf.showNext();
+                    prev.animate().setDuration(500).alpha(1).setListener(new Animation(prev));
+                }
+                if(vf.getDisplayedChild() == vf.getChildCount()-1){
+                    next.animate().setDuration(500).alpha(0).setListener(new Animation(next));
+                    add.animate().setDuration(500).alpha(0).setListener(new Animation(add));
+                    generate.animate().setDuration(500).alpha(1).setListener(new Animation(generate));
+                }
+                if(vf.getDisplayedChild() > 0 && vf.getDisplayedChild() < vf.getChildCount()-1){
+                    add.animate().setDuration(500).alpha(1).setListener(new Animation(add));
+                }
+            }
+        });
+
+        add.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                int currentPositionFlipper = vf.getDisplayedChild();
+                View currentViewFlipper = vf.getCurrentView();
+                LayoutInflater inflater = getLayoutInflater();
+                LinearLayout container = null;
+                RelativeLayout newView = null;
+
+                switch(currentPositionFlipper){
+                    case 1:
+                        container = (LinearLayout) currentViewFlipper.findViewById(R.id.manual_fields);
+                        inflater.inflate(R.layout.item_manual, container);
+                        break;
+                    case 2:
+                        container = (LinearLayout) currentViewFlipper.findViewById(R.id.plan_fields);
+                        inflater.inflate(R.layout.item_plan, container);
+                        break;
+                    case 3:
+                        container = (LinearLayout) currentViewFlipper.findViewById(R.id.agreement_fields);
+                        inflater.inflate(R.layout.item_agreement, container);
+                        break;
+                    case 4:
+                        container = (LinearLayout) currentViewFlipper.findViewById(R.id.document_fields);
+                        inflater.inflate(R.layout.item_document, container);
+                        break;
+                    case 5:
+                        container = (LinearLayout) currentViewFlipper.findViewById(R.id.procedure_fields);
+                        inflater.inflate(R.layout.item_procedure, container);
+                        break;
+                    case 6:
+                        container = (LinearLayout) currentViewFlipper.findViewById(R.id.guideline_fields);
+                        inflater.inflate(R.layout.item_guideline, container);
+                        break;
+                }
+                newView = (RelativeLayout) container.getChildAt(container.getChildCount()-1);
+                ((EditText) newView.getChildAt(1)).setText(((EditText) newView.getChildAt(1)).getText().toString() + container.getChildCount());
+                ((EditText) newView.getChildAt(3)).setText(((EditText) newView.getChildAt(3)).getText().toString() + container.getChildCount());
+                ((EditText) newView.getChildAt(5)).setText(((EditText) newView.getChildAt(5)).getText().toString() + container.getChildCount());
+                ((EditText) newView.getChildAt(7)).setText(((EditText) newView.getChildAt(7)).getText().toString() + container.getChildCount());
+                ((EditText) newView.getChildAt(9)).setText(((EditText) newView.getChildAt(9)).getText().toString() + container.getChildCount());
+                ((EditText) newView.getChildAt(11)).setText(((EditText) newView.getChildAt(11)).getText().toString() + container.getChildCount());
+                newView.findViewById(R.id.delete).setOnClickListener(new DeleteListener(newView));
+            }
+        });
+
+        generate.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
                 String nameOfOffice = ((EditText) findViewById(R.id.name_of_office)).getText().toString();
                 String address = ((EditText) findViewById(R.id.address)).getText().toString();
                 String phoneOrEmail = ((EditText) findViewById(R.id.phone_or_email)).getText().toString();
@@ -94,144 +166,14 @@ public class MainActivity extends AppCompatActivity {
                 myPDF.execute(nameOfOffice, address, phoneOrEmail, getInput(),
                         ((EditText) findViewById(R.id.last_update)).getText().toString(),
                         ((EditText) findViewById(R.id.verification)).getText().toString(),
-                        ((EditText) findViewById(R.id.sent_to_head)).getText().toString(),
+                        ((EditText) findViewById(R.id.sent_to_head_office)).getText().toString(),
                         ((EditText) findViewById(R.id.sent_to_branch)).getText().toString(),
                         ((EditText) findViewById(R.id.sent_to_offsite)).getText().toString()
                 );
             }
         });
 
-        inflater = (LayoutInflater) this.getSystemService
-                (Context.LAYOUT_INFLATER_SERVICE);
-
-        vf = (ViewFlipper) findViewById(R.id.viewFlipper);
-
-        manuals = (LinearLayout) findViewById(R.id.manuals);
-        plans = (LinearLayout) findViewById(R.id.plans);
-        agreements = (LinearLayout) findViewById(R.id.agreements);
-        documents = (LinearLayout) findViewById(R.id.documents);
-        procedures = (LinearLayout) findViewById(R.id.procedures);
-        guidelines = (LinearLayout) findViewById(R.id.guidelines);
-
-        addManual = (Button) findViewById(R.id.add_manual);
-        addPlan = (Button) findViewById(R.id.add_plan);
-        addAgreement = (Button) findViewById(R.id.add_agreement);
-        addDocument = (Button) findViewById(R.id.add_document);
-        addProcedure = (Button) findViewById(R.id.add_procedure);
-        addGuideline = (Button) findViewById(R.id.add_guideline);
-
-        manualFields = (LinearLayout) manuals.findViewById(R.id.manual_fields);
-        planFields = (LinearLayout) plans.findViewById(R.id.plan_fields);
-        agreementFields = (LinearLayout) agreements.findViewById(R.id.agreement_fields);
-        documentFields = (LinearLayout) documents.findViewById(R.id.document_fields);
-        procedureFields = (LinearLayout) procedures.findViewById(R.id.procedure_fields);
-        guidelineFields = (LinearLayout) guidelines.findViewById(R.id.guideline_fields);
-
-
-        addManual.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService
-//                        (Context.LAYOUT_INFLATER_SERVICE);
-
-                LinearLayout newlayout = (LinearLayout) inflater.inflate(R.layout.fields, manualFields);
-                LinearLayout newChild = (LinearLayout) newlayout.getChildAt(manualFields.getChildCount()-1);
-                ((EditText) newChild.getChildAt(0)).setText("Manual Name "+(manualFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(1)).setText("Manual Date "+(manualFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(2)).setText("Manual Author "+(manualFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(3)).setText("Manual Custodian "+(manualFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(4)).setText("Manual On-Site "+(manualFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(5)).setText("Manual Off-Site "+(manualFields.getChildCount()-1));
-            }
-        });
-
-        addPlan.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService
-//                        (Context.LAYOUT_INFLATER_SERVICE);
-
-                LinearLayout newlayout = (LinearLayout) inflater.inflate(R.layout.fields, planFields);
-                LinearLayout newChild = (LinearLayout) newlayout.getChildAt(planFields.getChildCount()-1);
-                ((EditText) newChild.getChildAt(0)).setText("Plan Name "+(planFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(1)).setText("Plan Date "+(planFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(2)).setText("Plan Author "+(planFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(3)).setText("Plan Custodian "+(planFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(4)).setText("Plan On-Site "+(planFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(5)).setText("Plan Off-Site "+(planFields.getChildCount()-1));
-            }
-        });
-
-        addAgreement.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService
-//                        (Context.LAYOUT_INFLATER_SERVICE);
-
-                LinearLayout newlayout = (LinearLayout) inflater.inflate(R.layout.fields, agreementFields);
-                LinearLayout newChild = (LinearLayout) newlayout.getChildAt(agreementFields.getChildCount()-1);
-                ((EditText) newChild.getChildAt(0)).setText("Agreement Name "+(agreementFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(1)).setText("Agreement Date "+(agreementFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(2)).setText("Agreement Author "+(agreementFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(3)).setText("Agreement Custodian "+(agreementFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(4)).setText("Agreement On-Site "+(agreementFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(5)).setText("Agreement Off-Site "+(agreementFields.getChildCount()-1));
-            }
-        });
-
-        addDocument.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService
-//                        (Context.LAYOUT_INFLATER_SERVICE);
-
-                LinearLayout newlayout = (LinearLayout) inflater.inflate(R.layout.fields, documentFields);
-                Log.e("count", newlayout.getChildCount()+"");
-                LinearLayout newChild = (LinearLayout) newlayout.getChildAt(documentFields.getChildCount()-1);
-                ((EditText) newChild.getChildAt(0)).setText("Document Name "+(documentFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(1)).setText("Document Date "+(documentFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(2)).setText("Document Author "+(documentFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(3)).setText("Document Custodian "+(documentFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(4)).setText("Document On-Site "+(documentFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(5)).setText("Document Off-Site "+(documentFields.getChildCount()-1));
-            }
-        });
-
-        addProcedure.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService
-//                        (Context.LAYOUT_INFLATER_SERVICE);
-
-                LinearLayout newlayout = (LinearLayout) inflater.inflate(R.layout.fields, procedureFields);
-                Log.e("count", newlayout.getChildCount()+"");
-                LinearLayout newChild = (LinearLayout) newlayout.getChildAt(procedureFields.getChildCount()-1);
-                ((EditText) newChild.getChildAt(0)).setText("Manual Name "+(procedureFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(1)).setText("Manual Date "+(procedureFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(2)).setText("Manual Author "+(procedureFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(3)).setText("Manual Custodian "+(procedureFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(4)).setText("Manual On-Site "+(procedureFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(5)).setText("Manual Off-Site "+(procedureFields.getChildCount()-1));
-            }
-        });
-
-        addGuideline.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View view) {
-//                LayoutInflater inflater = (LayoutInflater) MainActivity.this.getSystemService
-//                        (Context.LAYOUT_INFLATER_SERVICE);
-
-                LinearLayout newlayout = (LinearLayout) inflater.inflate(R.layout.fields, guidelineFields);
-                Log.e("count", newlayout.getChildCount()+"");
-                LinearLayout newChild = (LinearLayout) newlayout.getChildAt(guidelineFields.getChildCount()-1);
-                ((EditText) newChild.getChildAt(0)).setText("Guideline Name "+(guidelineFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(1)).setText("Guideline Date "+(guidelineFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(2)).setText("Guideline Author "+(guidelineFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(3)).setText("Guideline Custodian "+(guidelineFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(4)).setText("Guideline On-Site "+(guidelineFields.getChildCount()-1));
-                ((EditText) newChild.getChildAt(5)).setText("Guideline Off-Site "+(guidelineFields.getChildCount()-1));
-            }
-        });
+        loadData();
     }
 
     @Override
@@ -249,10 +191,12 @@ public class MainActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-
-
+        if (id == R.id.action_reset) {
+            preferences.clearAll();
+            preferences.isset(false);
+            Intent i = getIntent();
+            finish();
+            startActivity(i);
         }
 
         return super.onOptionsItemSelected(item);
@@ -262,14 +206,14 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> manuals = new ArrayList<>();
 
         for(int i = 0; i<(manualFields.getChildCount()); i++){
-            LinearLayout current = (LinearLayout) manualFields.getChildAt(i);
+            RelativeLayout current = (RelativeLayout) manualFields.getChildAt(i);
             String[] manual = {
-                    ((EditText) current.getChildAt(0)).getText().toString(),
                     ((EditText) current.getChildAt(1)).getText().toString(),
-                    ((EditText) current.getChildAt(2)).getText().toString(),
                     ((EditText) current.getChildAt(3)).getText().toString(),
-                    ((EditText) current.getChildAt(4)).getText().toString(),
                     ((EditText) current.getChildAt(5)).getText().toString(),
+                    ((EditText) current.getChildAt(7)).getText().toString(),
+                    ((EditText) current.getChildAt(9)).getText().toString(),
+                    ((EditText) current.getChildAt(11)).getText().toString(),
             };
 
             manuals.add(manual);
@@ -277,14 +221,14 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> plans = new ArrayList<>();
 
         for(int i = 0; i<(planFields.getChildCount()); i++){
-            LinearLayout current = (LinearLayout) planFields.getChildAt(i);
+            RelativeLayout current = (RelativeLayout) planFields.getChildAt(i);
             String[] plan = {
-                    ((EditText) current.getChildAt(0)).getText().toString(),
                     ((EditText) current.getChildAt(1)).getText().toString(),
-                    ((EditText) current.getChildAt(2)).getText().toString(),
                     ((EditText) current.getChildAt(3)).getText().toString(),
-                    ((EditText) current.getChildAt(4)).getText().toString(),
                     ((EditText) current.getChildAt(5)).getText().toString(),
+                    ((EditText) current.getChildAt(7)).getText().toString(),
+                    ((EditText) current.getChildAt(9)).getText().toString(),
+                    ((EditText) current.getChildAt(11)).getText().toString(),
             };
 
             plans.add(plan);
@@ -293,14 +237,14 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> agreements = new ArrayList<>();
 
         for(int i = 0; i<(agreementFields.getChildCount()); i++){
-            LinearLayout current = (LinearLayout) agreementFields.getChildAt(i);
+            RelativeLayout current = (RelativeLayout) agreementFields.getChildAt(i);
             String[] agreement = {
-                    ((EditText) current.getChildAt(0)).getText().toString(),
                     ((EditText) current.getChildAt(1)).getText().toString(),
-                    ((EditText) current.getChildAt(2)).getText().toString(),
                     ((EditText) current.getChildAt(3)).getText().toString(),
-                    ((EditText) current.getChildAt(4)).getText().toString(),
                     ((EditText) current.getChildAt(5)).getText().toString(),
+                    ((EditText) current.getChildAt(7)).getText().toString(),
+                    ((EditText) current.getChildAt(9)).getText().toString(),
+                    ((EditText) current.getChildAt(11)).getText().toString(),
             };
 
             agreements.add(agreement);
@@ -309,14 +253,14 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> documents = new ArrayList<>();
 
         for(int i = 0; i<(documentFields.getChildCount()); i++){
-            LinearLayout current = (LinearLayout) documentFields.getChildAt(i);
+            RelativeLayout current = (RelativeLayout) documentFields.getChildAt(i);
             String[] document = {
-                    ((EditText) current.getChildAt(0)).getText().toString(),
                     ((EditText) current.getChildAt(1)).getText().toString(),
-                    ((EditText) current.getChildAt(2)).getText().toString(),
                     ((EditText) current.getChildAt(3)).getText().toString(),
-                    ((EditText) current.getChildAt(4)).getText().toString(),
                     ((EditText) current.getChildAt(5)).getText().toString(),
+                    ((EditText) current.getChildAt(7)).getText().toString(),
+                    ((EditText) current.getChildAt(9)).getText().toString(),
+                    ((EditText) current.getChildAt(11)).getText().toString(),
             };
 
             documents.add(document);
@@ -325,14 +269,14 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> procedures = new ArrayList<>();
 
         for(int i = 0; i<(procedureFields.getChildCount()); i++){
-            LinearLayout current = (LinearLayout) procedureFields.getChildAt(i);
+            RelativeLayout current = (RelativeLayout) procedureFields.getChildAt(i);
             String[] procedure = {
-                    ((EditText) current.getChildAt(0)).getText().toString(),
                     ((EditText) current.getChildAt(1)).getText().toString(),
-                    ((EditText) current.getChildAt(2)).getText().toString(),
                     ((EditText) current.getChildAt(3)).getText().toString(),
-                    ((EditText) current.getChildAt(4)).getText().toString(),
                     ((EditText) current.getChildAt(5)).getText().toString(),
+                    ((EditText) current.getChildAt(7)).getText().toString(),
+                    ((EditText) current.getChildAt(9)).getText().toString(),
+                    ((EditText) current.getChildAt(11)).getText().toString(),
             };
 
             procedures.add(procedure);
@@ -341,14 +285,14 @@ public class MainActivity extends AppCompatActivity {
         List<String[]> guidelines = new ArrayList<>();
 
         for(int i = 0; i<(guidelineFields.getChildCount()); i++){
-            LinearLayout current = (LinearLayout) guidelineFields.getChildAt(i);
+            RelativeLayout current = (RelativeLayout) guidelineFields.getChildAt(i);
             String[] guideline = {
-                    ((EditText) current.getChildAt(0)).getText().toString(),
                     ((EditText) current.getChildAt(1)).getText().toString(),
-                    ((EditText) current.getChildAt(2)).getText().toString(),
                     ((EditText) current.getChildAt(3)).getText().toString(),
-                    ((EditText) current.getChildAt(4)).getText().toString(),
                     ((EditText) current.getChildAt(5)).getText().toString(),
+                    ((EditText) current.getChildAt(7)).getText().toString(),
+                    ((EditText) current.getChildAt(9)).getText().toString(),
+                    ((EditText) current.getChildAt(11)).getText().toString(),
             };
 
             guidelines.add(guideline);
@@ -365,4 +309,148 @@ public class MainActivity extends AppCompatActivity {
         return params;
     }
 
+    private class Animation implements Animator.AnimatorListener{
+        View view;
+        Animation(View view){
+            this.view = view;
+        }
+
+        @Override
+        public void onAnimationStart(Animator animator) {
+            if(view.getAlpha() == 0)
+                view.setVisibility(View.VISIBLE);
+            view.setClickable(false);
+        }
+
+        @Override
+        public void onAnimationEnd(Animator animator) {
+            if(view.getAlpha() == 0) {
+                view.setClickable(false);
+                view.setVisibility(View.INVISIBLE);
+            }else
+                view.setClickable(true);
+        }
+
+        @Override
+        public void onAnimationCancel(Animator animator) {
+
+        }
+
+        @Override
+        public void onAnimationRepeat(Animator animator) {
+
+        }
+    }
+
+    private void loadData(){
+        LayoutInflater inflater = getLayoutInflater();
+        if(preferences.isset()){
+            String[] details = preferences.getDetails();
+            ((EditText) findViewById(R.id.name_of_office)).setText(details[0]);
+            ((EditText) findViewById(R.id.address)).setText(details[1]);
+            ((EditText) findViewById(R.id.phone_or_email)).setText(details[2]);
+            ((EditText) findViewById(R.id.last_update)).setText(details[3]);
+            ((EditText) findViewById(R.id.verification)).setText(details[4]);
+            ((EditText) findViewById(R.id.sent_to_head_office)).setText(details[5]);
+            ((EditText) findViewById(R.id.sent_to_branch)).setText(details[6]);
+            ((EditText) findViewById(R.id.sent_to_offsite)).setText(details[7]);
+
+            List<List<String[]>> documentsPref = preferences.getDocumentsPref();
+
+            List<String[]> manuals = documentsPref.get(0);
+
+            for(int i = 0; i<(manuals.size()); i++){
+                String[] manual = manuals.get(i);
+                RelativeLayout current = (RelativeLayout)((LinearLayout)inflater.inflate(R.layout.item_manual, manualFields)).getChildAt(i);
+                ((EditText) current.getChildAt(1)).setText(manual[0]);
+                ((EditText) current.getChildAt(3)).setText(manual[1]);
+                ((EditText) current.getChildAt(5)).setText(manual[2]);
+                ((EditText) current.getChildAt(7)).setText(manual[3]);
+                ((EditText) current.getChildAt(9)).setText(manual[4]);
+                ((EditText) current.getChildAt(11)).setText(manual[5]);
+                current.findViewById(R.id.delete).setOnClickListener(new DeleteListener(current));
+            }
+
+            List<String[]> plans = documentsPref.get(1);
+
+            for(int i = 0; i<(plans.size()); i++){
+                String[] plan = plans.get(i);
+                RelativeLayout current = (RelativeLayout)((LinearLayout)inflater.inflate(R.layout.item_plan, planFields)).getChildAt(i);
+                ((EditText) current.getChildAt(1)).setText(plan[0]);
+                ((EditText) current.getChildAt(3)).setText(plan[1]);
+                ((EditText) current.getChildAt(5)).setText(plan[2]);
+                ((EditText) current.getChildAt(7)).setText(plan[3]);
+                ((EditText) current.getChildAt(9)).setText(plan[4]);
+                ((EditText) current.getChildAt(11)).setText(plan[5]);
+                current.findViewById(R.id.delete).setOnClickListener(new DeleteListener(current));
+            }
+
+            List<String[]> agreements = documentsPref.get(2);
+
+            for(int i = 0; i<(agreements.size()); i++){
+                String[] agreement = agreements.get(i);
+                RelativeLayout current = (RelativeLayout)((LinearLayout)inflater.inflate(R.layout.item_agreement, agreementFields)).getChildAt(i);
+                ((EditText) current.getChildAt(1)).setText(agreement[0]);
+                ((EditText) current.getChildAt(3)).setText(agreement[1]);
+                ((EditText) current.getChildAt(5)).setText(agreement[2]);
+                ((EditText) current.getChildAt(7)).setText(agreement[3]);
+                ((EditText) current.getChildAt(9)).setText(agreement[4]);
+                ((EditText) current.getChildAt(11)).setText(agreement[5]);
+                current.findViewById(R.id.delete).setOnClickListener(new DeleteListener(current));
+            }
+
+            List<String[]> documents = documentsPref.get(3);
+
+            for(int i = 0; i<(documents.size()); i++){
+                String[] document = documents.get(i);
+                RelativeLayout current = (RelativeLayout)((LinearLayout)inflater.inflate(R.layout.item_document, documentFields)).getChildAt(i);
+                ((EditText) current.getChildAt(1)).setText(document[0]);
+                ((EditText) current.getChildAt(3)).setText(document[1]);
+                ((EditText) current.getChildAt(5)).setText(document[2]);
+                ((EditText) current.getChildAt(7)).setText(document[3]);
+                ((EditText) current.getChildAt(9)).setText(document[4]);
+                ((EditText) current.getChildAt(11)).setText(document[5]);
+                current.findViewById(R.id.delete).setOnClickListener(new DeleteListener(current));
+            }
+
+            List<String[]> procedures = documentsPref.get(4);
+
+            for(int i = 0; i<(procedures.size()); i++){
+                String[] procedure = procedures.get(i);
+                RelativeLayout current = (RelativeLayout)((LinearLayout)inflater.inflate(R.layout.item_procedure, procedureFields)).getChildAt(i);
+                ((EditText) current.getChildAt(1)).setText(procedure[0]);
+                ((EditText) current.getChildAt(3)).setText(procedure[1]);
+                ((EditText) current.getChildAt(5)).setText(procedure[2]);
+                ((EditText) current.getChildAt(7)).setText(procedure[3]);
+                ((EditText) current.getChildAt(9)).setText(procedure[4]);
+                ((EditText) current.getChildAt(11)).setText(procedure[5]);
+                current.findViewById(R.id.delete).setOnClickListener(new DeleteListener(current));
+            }
+
+            List<String[]> guidelines = documentsPref.get(5);
+
+            for(int i = 0; i<(guidelines.size()); i++){
+                String[] guideline = guidelines.get(i);
+                RelativeLayout current = (RelativeLayout)((LinearLayout)inflater.inflate(R.layout.item_guideline, guidelineFields)).getChildAt(i);
+                ((EditText) current.getChildAt(1)).setText(guideline[0]);
+                ((EditText) current.getChildAt(3)).setText(guideline[1]);
+                ((EditText) current.getChildAt(5)).setText(guideline[2]);
+                ((EditText) current.getChildAt(7)).setText(guideline[3]);
+                ((EditText) current.getChildAt(9)).setText(guideline[4]);
+                ((EditText) current.getChildAt(11)).setText(guideline[5]);
+                current.findViewById(R.id.delete).setOnClickListener(new DeleteListener(current));
+            }
+        }
+    }
+
+    private class DeleteListener implements View.OnClickListener{
+        View view;
+        public DeleteListener(View view){
+            this.view = view;
+        }
+        @Override
+        public void onClick(View view) {
+            ((ViewGroup)this.view.getParent()).removeView(this.view);
+        }
+    }
 }

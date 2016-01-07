@@ -53,7 +53,7 @@ public class MyPDF extends AsyncTask<Object, Void, Void> {
         pDialog.setMessage("Loading..");
         pDialog.setIndeterminate(true);
         pDialog.setCancelable(false);
-//        pDialog.show();
+        pDialog.show();
     }
 
     @Override
@@ -315,5 +315,6 @@ public class MyPDF extends AsyncTask<Object, Void, Void> {
     protected void onPostExecute(Void aVoid) {
         super.onPostExecute(aVoid);
         pDialog.dismiss();
+        MainActivity.pdfGenerated = true;
     }
 }
